@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Heart, Mail, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -33,17 +34,30 @@ const Index = () => {
     }
 
     setIsLoading(true);
-    console.log("Email submitted:", email);
-
-    // Simulate API call - replace with Supabase integration
-    setTimeout(() => {
+    
+    try {
+      // Call the edge function to send confirmation email
+      const { error } = await supabase.functions.invoke('send-confirmation', {
+        body: { email },
+      });
+      
+      if (error) throw error;
+      
       toast({
         title: "Welcome to Daily Love Letters! 💌",
-        description: "You're all set! Expect your first personalized love letter tomorrow morning.",
+        description: "We've sent you a confirmation email. Check your inbox!",
       });
       setEmail("");
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Something went wrong",
+        description: "We couldn't process your subscription. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
