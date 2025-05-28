@@ -3,28 +3,30 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Heart, Mail, Sparkles } from "lucide-react";
+import { Heart, Mail, Sparkles, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [deliveryPreference, setDeliveryPreference] = useState("email");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email) {
+    if (!email && !phoneNumber) {
       toast({
-        title: "Email Required",
-        description: "Please enter your email address to receive daily love letters.",
+        title: "Contact Required",
+        description: "Please enter either your email address or phone number to receive daily love letters.",
         variant: "destructive",
       });
       return;
     }
 
-    if (!email.includes("@")) {
+    if (email && !email.includes("@")) {
       toast({
         title: "Invalid Email",
         description: "Please enter a valid email address.",
@@ -33,21 +35,45 @@ const Index = () => {
       return;
     }
 
+    if (phoneNumber && !/^\+\d{10,15}$/.test(phoneNumber)) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please enter a valid phone number with country code (e.g., +1234567890).",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // Call the edge function to send confirmation email
-      const { error } = await supabase.functions.invoke('send-confirmation', {
-        body: { email },
+      // Call the appropriate edge function based on delivery preference
+      const functionName = deliveryPreference === 'whatsapp' || (deliveryPreference === 'both' && phoneNumber) 
+        ? 'send-whatsapp-confirmation' 
+        : 'send-confirmation';
+      
+      const { error } = await supabase.functions.invoke(functionName, {
+        body: { 
+          email: email || null, 
+          phone_number: phoneNumber || null,
+          delivery_preference: deliveryPreference 
+        },
       });
       
       if (error) throw error;
       
+      const message = deliveryPreference === 'whatsapp' 
+        ? "We've sent you a WhatsApp confirmation message!"
+        : deliveryPreference === 'both'
+        ? "We've sent confirmations to both your email and WhatsApp!"
+        : "We've sent you a confirmation email. Check your inbox!";
+      
       toast({
         title: "Welcome to Daily Love Letters! 💌",
-        description: "We've sent you a confirmation email. Check your inbox!",
+        description: message,
       });
       setEmail("");
+      setPhoneNumber("");
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -74,7 +100,7 @@ const Index = () => {
           </div>
           
           <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Receive a personalized, authentic love letter in your inbox every morning. 
+            Receive a personalized, authentic love letter in your inbox or WhatsApp every morning. 
             Start your day with words that warm your heart and remind you that you are cherished.
           </p>
         </div>
@@ -92,22 +118,86 @@ const Index = () => {
                 Begin Your Journey
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Enter your email to receive daily love letters crafted just for you
+                Choose how you'd like to receive your daily love letters
               </CardDescription>
             </CardHeader>
             
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Input
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-12 text-center border-rose-200 focus:border-rose-400 focus:ring-rose-400"
-                    disabled={isLoading}
-                  />
+                {/* Delivery Preference */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-700">How would you like to receive your letters?</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    <label className="flex items-center space-x-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="delivery"
+                        value="email"
+                        checked={deliveryPreference === "email"}
+                        onChange={(e) => setDeliveryPreference(e.target.value)}
+                        className="text-rose-500 focus:ring-rose-400"
+                      />
+                      <Mail className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm">Email only</span>
+                    </label>
+                    <label className="flex items-center space-x-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="delivery"
+                        value="whatsapp"
+                        checked={deliveryPreference === "whatsapp"}
+                        onChange={(e) => setDeliveryPreference(e.target.value)}
+                        className="text-rose-500 focus:ring-rose-400"
+                      />
+                      <MessageCircle className="w-4 h-4 text-green-500" />
+                      <span className="text-sm">WhatsApp only</span>
+                    </label>
+                    <label className="flex items-center space-x-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="delivery"
+                        value="both"
+                        checked={deliveryPreference === "both"}
+                        onChange={(e) => setDeliveryPreference(e.target.value)}
+                        className="text-rose-500 focus:ring-rose-400"
+                      />
+                      <div className="flex space-x-1">
+                        <Mail className="w-4 h-4 text-gray-500" />
+                        <MessageCircle className="w-4 h-4 text-green-500" />
+                      </div>
+                      <span className="text-sm">Both Email & WhatsApp</span>
+                    </label>
+                  </div>
                 </div>
+
+                {/* Email Input */}
+                {(deliveryPreference === "email" || deliveryPreference === "both") && (
+                  <div className="space-y-2">
+                    <Input
+                      type="email"
+                      placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-12 text-center border-rose-200 focus:border-rose-400 focus:ring-rose-400"
+                      disabled={isLoading}
+                    />
+                  </div>
+                )}
+
+                {/* Phone Input */}
+                {(deliveryPreference === "whatsapp" || deliveryPreference === "both") && (
+                  <div className="space-y-2">
+                    <Input
+                      type="tel"
+                      placeholder="+1234567890"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="h-12 text-center border-rose-200 focus:border-rose-400 focus:ring-rose-400"
+                      disabled={isLoading}
+                    />
+                    <p className="text-xs text-gray-500 text-center">Include country code (e.g., +1 for US)</p>
+                  </div>
+                )}
                 
                 <Button 
                   type="submit" 
@@ -146,8 +236,8 @@ const Index = () => {
             <div className="w-12 h-12 bg-gradient-to-r from-pink-400 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-4">
               <Mail className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Daily Delivery</h3>
-            <p className="text-gray-600">Wake up to a beautiful love letter in your inbox every single morning.</p>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Multi-Channel</h3>
+            <p className="text-gray-600">Receive your daily love letters via email, WhatsApp, or both - your choice!</p>
           </div>
           
           <div className="text-center p-6 rounded-xl bg-white/60 backdrop-blur-sm border border-rose-100">

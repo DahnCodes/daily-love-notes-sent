@@ -3,3 +3,6 @@ project_id = "qaeqzmsxcpnrnbwccrzg"
 
 [functions.send-confirmation]
 verify_jwt = false
+
+[functions.send-whatsapp-confirmation]
+verify_jwt = false

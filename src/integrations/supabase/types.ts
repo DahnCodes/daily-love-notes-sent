@@ -12,18 +12,24 @@ export type Database = {
       subscribers: {
         Row: {
           created_at: string
-          email: string
+          delivery_preference: string | null
+          email: string | null
           id: string
+          phone_number: string | null
         }
         Insert: {
           created_at?: string
-          email: string
+          delivery_preference?: string | null
+          email?: string | null
           id?: string
+          phone_number?: string | null
         }
         Update: {
           created_at?: string
-          email?: string
+          delivery_preference?: string | null
+          email?: string | null
           id?: string
+          phone_number?: string | null
         }
         Relationships: []
       }
