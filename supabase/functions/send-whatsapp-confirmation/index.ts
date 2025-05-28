@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -20,7 +19,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, phone_number, delivery_preference }: WhatsAppRequest = await req.json();
+    const { email, phone_number, delivery_preference }: WhatsAppRequest =
+      await req.json();
 
     // Store subscriber in the database
     const { error: dbError } = await fetch(
@@ -29,16 +29,16 @@ const handler = async (req: Request): Promise<Response> => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "apikey": Deno.env.get("SUPABASE_ANON_KEY") || "",
-          "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+          apikey: Deno.env.get("SUPABASE_ANON_KEY") || "",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
         },
-        body: JSON.stringify({ 
-          email: email || null, 
+        body: JSON.stringify({
+          email: email || null,
           phone_number: phone_number || null,
-          delivery_preference 
+          delivery_preference,
         }),
       }
-    ).then(res => res.json());
+    ).then((res) => res.json());
 
     if (dbError) {
       throw new Error(dbError.message);
@@ -62,16 +62,18 @@ Beginning tomorrow, you'll receive your first personalized love letter right her
 If you have any questions, just reply to this message. We'd love to hear from you.
 
 With warmth and gratitude,
-The Daily Love Letters Team 💕`
-        }
+The Daily Love Letters Team 💕`,
+        },
       };
 
       const whatsappResponse = await fetch(
-        `https://graph.facebook.com/v18.0/${Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")}/messages`,
+        `https://graph.facebook.com/v18.0/${Deno.env.get(
+          "WHATSAPP_PHONE_NUMBER_ID"
+        )}/messages`,
         {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${Deno.env.get("WHATSAPP_ACCESS_TOKEN")}`,
+            Authorization: `Bearer ${Deno.env.get("WHATSAPP_ACCESS_TOKEN")}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(whatsappMessage),
@@ -79,28 +81,32 @@ The Daily Love Letters Team 💕`
       );
 
       const whatsappResult = await whatsappResponse.json();
-      
+
       if (!whatsappResponse.ok) {
         console.error("WhatsApp API error:", whatsappResult);
-        throw new Error(`WhatsApp message failed: ${whatsappResult.error?.message || 'Unknown error'}`);
+        throw new Error(
+          `WhatsApp message failed: ${
+            whatsappResult.error?.message || "Unknown error"
+          }`
+        );
       }
 
       console.log("WhatsApp message sent successfully:", whatsappResult);
     }
 
     // Also send email if both delivery preference is selected and email is provided
-    if (delivery_preference === 'both' && email) {
+    if (delivery_preference === "both" && email) {
       const { error: emailError } = await fetch(
         `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-confirmation`,
         {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ email }),
         }
-      ).then(res => res.json());
+      ).then((res) => res.json());
 
       if (emailError) {
         console.error("Email sending failed:", emailError);
@@ -115,14 +121,15 @@ The Daily Love Letters Team 💕`
       },
     });
   } catch (error: any) {
-    console.error("Error in send-whatsapp-confirmation function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    console.error("Error in send-whatsapp-confirmation function:", {
+      message: error.message,
+      stack: error.stack,
+      full: error,
+    });
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 };
 

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -23,8 +22,20 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email }: EmailRequest = await req.json();
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email address" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     // Store subscriber in the database
-    const { error: dbError } = await fetch(
+    const dbResponse = await fetch(
       `${Deno.env.get("SUPABASE_URL")}/rest/v1/subscribers`,
       {
         method: "POST",
@@ -35,16 +46,19 @@ const handler = async (req: Request): Promise<Response> => {
         },
         body: JSON.stringify({ email }),
       }
-    ).then(res => res.json());
+    );
 
-    if (dbError) {
-      throw new Error(dbError.message);
+    // Check if database operation was successful
+    if (!dbResponse.ok) {
+      const dbError = await dbResponse.json();
+      console.error("Database error:", dbError);
+      throw new Error(dbError.message || "Failed to store subscriber");
     }
 
-    // Send the confirmation email
+    // Send the confirmation email to the provided email address
     const emailResponse = await resend.emails.send({
       from: "Daily Love Letters <onboarding@resend.dev>",
-      to: [email],
+      to: [email], // This uses the email from the request - it's already dynamic!
       subject: "Welcome to Daily Love Letters! 💌",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -78,9 +92,13 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Email sent successfully to:", email);
+    console.log("Email response:", emailResponse);
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: `Confirmation email sent to ${email}` 
+    }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
