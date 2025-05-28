@@ -51,13 +51,13 @@ const PrivacyPolicy: React.FC = () => {
         <li>Request deletion of your data</li>
         <li>Opt out of receiving messages at any time</li>
       </ul>
-      <p>To do so, contact us at <strong>your-email@example.com</strong>.</p>
+      <p>To do so, contact us at <strong>stanleydaniel994@gmail.com</strong>.</p>
 
       <h2 style={styles.subtitle}>Changes to This Policy</h2>
       <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page.</p>
 
       <h2 style={styles.subtitle}>Contact Us</h2>
-      <p>If you have any questions, contact us at <strong>your-email@example.com</strong>.</p>
+      <p>If you have any questions, contact us at <strong>stanleydaniel994@gmail.com</strong>.</p>
     </div>
   );
 };
