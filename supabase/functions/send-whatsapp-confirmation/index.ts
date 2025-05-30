@@ -69,11 +69,40 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     console.log("Database response status:", dbResponse.status);
-    const dbResult = await dbResponse.json();
-    console.log("Database response:", JSON.stringify(dbResult, null, 2));
+    console.log("Database response headers:", Object.fromEntries(dbResponse.headers.entries()));
+
+    // Check if response has content before trying to parse JSON
+    let dbResult = null;
+    const contentType = dbResponse.headers.get("content-type");
+    const contentLength = dbResponse.headers.get("content-length");
+    
+    console.log("Content-Type:", contentType);
+    console.log("Content-Length:", contentLength);
+
+    if (contentType && contentType.includes("application/json") && contentLength !== "0") {
+      try {
+        const responseText = await dbResponse.text();
+        console.log("Raw response text:", responseText);
+        
+        if (responseText.trim()) {
+          dbResult = JSON.parse(responseText);
+          console.log("Database response parsed:", JSON.stringify(dbResult, null, 2));
+        } else {
+          console.log("Empty response body, treating as success");
+          dbResult = { success: true };
+        }
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError);
+        console.log("Treating as success since status is OK");
+        dbResult = { success: true };
+      }
+    } else {
+      console.log("No JSON content or empty response, treating as success");
+      dbResult = { success: true };
+    }
 
     if (!dbResponse.ok) {
-      throw new Error(`Database error: ${JSON.stringify(dbResult)}`);
+      throw new Error(`Database error: ${JSON.stringify(dbResult)} (Status: ${dbResponse.status})`);
     }
 
     // Send WhatsApp message if phone number provided
