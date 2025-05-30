@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -19,18 +20,45 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, phone_number, delivery_preference }: WhatsAppRequest =
-      await req.json();
+    console.log("=== WhatsApp Confirmation Function Started ===");
+    
+    const requestBody: WhatsAppRequest = await req.json();
+    console.log("Request body received:", JSON.stringify(requestBody, null, 2));
+    
+    const { email, phone_number, delivery_preference } = requestBody;
+
+    // Validate required fields
+    if (!phone_number && delivery_preference !== 'email') {
+      console.error("Phone number is required for WhatsApp delivery");
+      throw new Error("Phone number is required for WhatsApp delivery");
+    }
+
+    // Check environment variables
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const whatsappAccessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
+    const whatsappPhoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+
+    console.log("Environment check:");
+    console.log("- SUPABASE_URL:", supabaseUrl ? "✓ Set" : "✗ Missing");
+    console.log("- SUPABASE_ANON_KEY:", supabaseAnonKey ? "✓ Set" : "✗ Missing");
+    console.log("- WHATSAPP_ACCESS_TOKEN:", whatsappAccessToken ? "✓ Set" : "✗ Missing");
+    console.log("- WHATSAPP_PHONE_NUMBER_ID:", whatsappPhoneNumberId ? "✓ Set" : "✗ Missing");
+
+    if (!whatsappAccessToken || !whatsappPhoneNumberId) {
+      throw new Error("WhatsApp credentials not configured");
+    }
 
     // Store subscriber in the database
-    const { error: dbError } = await fetch(
-      `${Deno.env.get("SUPABASE_URL")}/rest/v1/subscribers`,
+    console.log("Storing subscriber in database...");
+    const dbResponse = await fetch(
+      `${supabaseUrl}/rest/v1/subscribers`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          apikey: Deno.env.get("SUPABASE_ANON_KEY") || "",
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+          apikey: supabaseAnonKey || "",
+          Authorization: `Bearer ${supabaseAnonKey}`,
         },
         body: JSON.stringify({
           email: email || null,
@@ -38,17 +66,28 @@ const handler = async (req: Request): Promise<Response> => {
           delivery_preference,
         }),
       }
-    ).then((res) => res.json());
+    );
 
-    if (dbError) {
-      throw new Error(dbError.message);
+    console.log("Database response status:", dbResponse.status);
+    const dbResult = await dbResponse.json();
+    console.log("Database response:", JSON.stringify(dbResult, null, 2));
+
+    if (!dbResponse.ok) {
+      throw new Error(`Database error: ${JSON.stringify(dbResult)}`);
     }
 
     // Send WhatsApp message if phone number provided
     if (phone_number) {
+      console.log("Preparing WhatsApp message...");
+      
+      // Clean phone number (remove + and any spaces/dashes)
+      const cleanPhoneNumber = phone_number.replace(/[\+\s\-\(\)]/g, '');
+      console.log("Original phone number:", phone_number);
+      console.log("Cleaned phone number:", cleanPhoneNumber);
+
       const whatsappMessage = {
         messaging_product: "whatsapp",
-        to: phone_number.replace("+", ""),
+        to: cleanPhoneNumber,
         type: "text",
         text: {
           body: `🌹 Welcome to Daily Love Letters! 💌
@@ -66,53 +105,64 @@ The Daily Love Letters Team 💕`,
         },
       };
 
-      const whatsappResponse = await fetch(
-        `https://graph.facebook.com/v18.0/${Deno.env.get(
-          "WHATSAPP_PHONE_NUMBER_ID"
-        )}/messages`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${Deno.env.get("WHATSAPP_ACCESS_TOKEN")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(whatsappMessage),
-        }
-      );
+      console.log("WhatsApp message payload:", JSON.stringify(whatsappMessage, null, 2));
 
+      const whatsappUrl = `https://graph.facebook.com/v18.0/${whatsappPhoneNumberId}/messages`;
+      console.log("WhatsApp API URL:", whatsappUrl);
+
+      const whatsappResponse = await fetch(whatsappUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${whatsappAccessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(whatsappMessage),
+      });
+
+      console.log("WhatsApp API response status:", whatsappResponse.status);
       const whatsappResult = await whatsappResponse.json();
+      console.log("WhatsApp API response:", JSON.stringify(whatsappResult, null, 2));
 
       if (!whatsappResponse.ok) {
-        console.error("WhatsApp API error:", whatsappResult);
+        console.error("WhatsApp API error details:", {
+          status: whatsappResponse.status,
+          statusText: whatsappResponse.statusText,
+          result: whatsappResult
+        });
         throw new Error(
           `WhatsApp message failed: ${
-            whatsappResult.error?.message || "Unknown error"
+            whatsappResult.error?.message || JSON.stringify(whatsappResult)
           }`
         );
       }
 
-      console.log("WhatsApp message sent successfully:", whatsappResult);
+      console.log("WhatsApp message sent successfully!");
     }
 
     // Also send email if both delivery preference is selected and email is provided
     if (delivery_preference === "both" && email) {
-      const { error: emailError } = await fetch(
-        `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-confirmation`,
+      console.log("Sending email confirmation as well...");
+      const emailResponse = await fetch(
+        `${supabaseUrl}/functions/v1/send-confirmation`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+            Authorization: `Bearer ${supabaseAnonKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ email }),
         }
-      ).then((res) => res.json());
+      );
 
-      if (emailError) {
-        console.error("Email sending failed:", emailError);
+      const emailResult = await emailResponse.json();
+      console.log("Email response:", JSON.stringify(emailResult, null, 2));
+
+      if (!emailResponse.ok) {
+        console.error("Email sending failed:", emailResult);
       }
     }
 
+    console.log("=== Function completed successfully ===");
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: {
@@ -121,12 +171,15 @@ The Daily Love Letters Team 💕`,
       },
     });
   } catch (error: any) {
-    console.error("Error in send-whatsapp-confirmation function:", {
-      message: error.message,
-      stack: error.stack,
-      full: error,
-    });
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("=== ERROR in send-whatsapp-confirmation function ===");
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    console.error("Full error object:", error);
+    
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: "Check the function logs for more information"
+    }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
