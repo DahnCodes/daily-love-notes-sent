@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -34,7 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Store subscriber in the database
+    // Try to insert subscriber, but handle duplicates gracefully
     const dbResponse = await fetch(
       `${Deno.env.get("SUPABASE_URL")}/rest/v1/subscribers`,
       {
@@ -43,22 +44,30 @@ const handler = async (req: Request): Promise<Response> => {
           "Content-Type": "application/json",
           "apikey": Deno.env.get("SUPABASE_ANON_KEY") || "",
           "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+          "Prefer": "resolution=ignore-duplicates"
         },
         body: JSON.stringify({ email }),
       }
     );
 
-    // Check if database operation was successful
+    // If it's a duplicate key error, that's okay - the subscriber already exists
     if (!dbResponse.ok) {
       const dbError = await dbResponse.json();
-      console.error("Database error:", dbError);
-      throw new Error(dbError.message || "Failed to store subscriber");
+      console.log("Database response:", dbError);
+      
+      // If it's not a duplicate key error, then it's a real problem
+      if (dbError.code !== "23505") {
+        console.error("Database error:", dbError);
+        throw new Error(dbError.message || "Failed to store subscriber");
+      } else {
+        console.log("Subscriber already exists, proceeding to send email");
+      }
     }
 
     // Send the confirmation email to the provided email address
     const emailResponse = await resend.emails.send({
       from: "Daily Love Letters <onboarding@resend.dev>",
-      to: [email], // This uses the email from the request - it's already dynamic!
+      to: [email],
       subject: "Welcome to Daily Love Letters! 💌",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
