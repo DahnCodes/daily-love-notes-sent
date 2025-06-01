@@ -121,7 +121,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send the confirmation email
     const confirmationResponse = await resend.emails.send({
-      from: "Daily Love Letters <onboarding@resend.dev>",
+      from: "Daily Love Letters <hello@yourdomain.com>",
       to: [email],
       subject: "Welcome to Daily Love Letters! 💌",
       html: `
@@ -162,7 +162,7 @@ const handler = async (req: Request): Promise<Response> => {
     const loveLetter = await generateLoveLetter();
     
     const loveLetterResponse = await resend.emails.send({
-      from: "Daily Love Letters <onboarding@resend.dev>",
+      from: "Daily Love Letters <hello@yourdomain.com>",
       to: [email],
       subject: "Your First Love Letter 💕",
       html: `
