@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -15,17 +16,17 @@ interface EmailRequest {
 
 const generateLoveLetter = async (): Promise<string> => {
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
       headers: {
-        Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
-        "Content-Type": "application/json",
+        'Authorization': `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: 'gpt-4o-mini',
         messages: [
           {
-            role: "system",
+            role: 'system',
             content: `You are a master of writing deeply heartfelt, authentic love letters. Your letters should:
             - Be warm, genuine, and emotionally resonant
             - Use beautiful, poetic language without being overly flowery
@@ -35,13 +36,12 @@ const generateLoveLetter = async (): Promise<string> => {
             - Feel like it's written by someone who truly cares
             - Include encouraging and uplifting messages
             - Use "you" to address the reader directly
-            - End with warmth and affection`,
+            - End with warmth and affection`
           },
           {
-            role: "user",
-            content:
-              "Write a beautiful, heartfelt love letter that will make someone feel truly cherished and loved. Make it feel personal and authentic.",
-          },
+            role: 'user',
+            content: 'Write a beautiful, heartfelt love letter that will make someone feel truly cherished and loved. Make it feel personal and authentic.'
+          }
         ],
         temperature: 0.8,
         max_tokens: 500,
@@ -81,10 +81,13 @@ const handler = async (req: Request): Promise<Response> => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
-      return new Response(JSON.stringify({ error: "Invalid email address" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return new Response(
+        JSON.stringify({ error: "Invalid email address" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
     // Try to insert subscriber, but handle duplicates gracefully
@@ -94,9 +97,9 @@ const handler = async (req: Request): Promise<Response> => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          apikey: Deno.env.get("SUPABASE_ANON_KEY") || "",
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
-          Prefer: "resolution=ignore-duplicates",
+          "apikey": Deno.env.get("SUPABASE_ANON_KEY") || "",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+          "Prefer": "resolution=ignore-duplicates"
         },
         body: JSON.stringify({ email }),
       }
@@ -106,7 +109,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (!dbResponse.ok) {
       const dbError = await dbResponse.json();
       console.log("Database response:", dbError);
-
+      
       // If it's not a duplicate key error, then it's a real problem
       if (dbError.code !== "23505") {
         console.error("Database error:", dbError);
@@ -118,9 +121,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send the confirmation email
     const confirmationResponse = await resend.emails.send({
-      from: "Daily Love Letters <onboarding@resend.dev>",
       to: [email],
-      subject: "Welcome to Daily Love Letters! 💌",
+      from: "Daily Love Letters <hello@dailylovenotes.name.ng>",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #e11d48; text-align: center;">Welcome to Daily Love Letters! 💌</h1>
@@ -150,6 +152,7 @@ const handler = async (req: Request): Promise<Response> => {
           </p>
         </div>
       `,
+      subject: "Welcome to Daily Love Letters! 💌",
     });
 
     console.log("Confirmation email sent successfully to:", email);
@@ -157,11 +160,10 @@ const handler = async (req: Request): Promise<Response> => {
     // Generate and send the first love letter
     console.log("Generating love letter...");
     const loveLetter = await generateLoveLetter();
-
+    
     const loveLetterResponse = await resend.emails.send({
-      from: "Daily Love Letters <onboarding@resend.dev>",
       to: [email],
-      subject: "Your First Love Letter 💕",
+      from: "Daily Love Letters <hello@dailylovenotes.name.ng>",
       html: `
         <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 30px; background: linear-gradient(135deg, #fef7f0 0%, #fef2f2 100%);">
           <div style="text-align: center; margin-bottom: 30px;">
@@ -179,30 +181,31 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
         </div>
       `,
+      subject: "Your First Love Letter 💕",
     });
 
     console.log("Love letter sent successfully to:", email);
     console.log("Generated love letter:", loveLetter.substring(0, 100) + "...");
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Welcome emails sent to ${email}! Your first love letter is in your inbox.`,
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
-      }
-    );
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: `Welcome emails sent to ${email}! Your first love letter is in your inbox.` 
+    }), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders,
+      },
+    });
   } catch (error: any) {
     console.error("Error in send-confirmation function:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
   }
 };
 
