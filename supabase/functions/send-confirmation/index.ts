@@ -50,12 +50,16 @@ const generateRomanticLoveLetter = async (): Promise<string> => {
     });
 
     if (!response.ok) {
+      console.error(`OpenAI API error: ${response.status} - ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("OpenAI error details:", errorText);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid response from OpenAI API:', data);
       throw new Error('Invalid response from OpenAI API');
     }
     
@@ -102,6 +106,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log(`Starting subscription process for: ${email}`);
+
     // Try to insert subscriber, but handle duplicates gracefully
     const dbResponse = await fetch(
       `${Deno.env.get("SUPABASE_URL")}/rest/v1/subscribers`,
@@ -127,11 +133,14 @@ const handler = async (req: Request): Promise<Response> => {
         console.error("Database error:", dbError);
         throw new Error(dbError.message || "Failed to store subscriber");
       } else {
-        console.log("Subscriber already exists, proceeding to send email");
+        console.log("Subscriber already exists, proceeding to send emails");
       }
     }
 
-    // Send the confirmation email with your verified domain
+    console.log("Database operation completed successfully");
+
+    // Send the confirmation email first
+    console.log("Sending welcome confirmation email...");
     const confirmationResponse = await resend.emails.send({
       to: [email],
       from: "Daily Love Letters <hello@dailylovenotes.name.ng>",
@@ -167,12 +176,19 @@ const handler = async (req: Request): Promise<Response> => {
       subject: "Welcome to Daily Love Letters! 💌",
     });
 
-    console.log("Confirmation email sent successfully to:", email);
+    if (confirmationResponse.error) {
+      console.error("Failed to send confirmation email:", confirmationResponse.error);
+      throw new Error(`Failed to send confirmation email: ${confirmationResponse.error.message}`);
+    }
 
-    // Generate and send the first romantic love letter
-    console.log("Generating romantic love letter...");
+    console.log("Welcome confirmation email sent successfully");
+
+    // Generate and send the first romantic love letter immediately
+    console.log("Generating first romantic love letter...");
     const loveLetter = await generateRomanticLoveLetter();
+    console.log("Love letter generated successfully");
     
+    console.log("Sending first love letter...");
     const loveLetterResponse = await resend.emails.send({
       to: [email],
       from: "Daily Love Letters <hello@dailylovenotes.name.ng>",
@@ -196,12 +212,21 @@ const handler = async (req: Request): Promise<Response> => {
       subject: "Your First Romantic Love Letter 💕",
     });
 
-    console.log("Romantic love letter sent successfully to:", email);
-    console.log("Generated love letter preview:", loveLetter.substring(0, 100) + "...");
+    if (loveLetterResponse.error) {
+      console.error("Failed to send love letter:", loveLetterResponse.error);
+      // Don't throw here - we still want to return success for the subscription
+      console.log("Subscription successful but love letter failed to send");
+    } else {
+      console.log("First romantic love letter sent successfully");
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message: `Welcome emails sent to ${email}! Your first romantic love letter is in your inbox.` 
+      message: `Welcome! Check your inbox for your welcome email and your first romantic love letter.`,
+      details: {
+        confirmationSent: !confirmationResponse.error,
+        loveLetterSent: !loveLetterResponse.error
+      }
     }), {
       status: 200,
       headers: {
