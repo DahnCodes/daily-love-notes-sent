@@ -14,7 +14,7 @@ interface EmailRequest {
   email: string;
 }
 
-const generateLoveLetter = async (): Promise<string> => {
+const generateRomanticLoveLetter = async (): Promise<string> => {
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -27,24 +27,25 @@ const generateLoveLetter = async (): Promise<string> => {
         messages: [
           {
             role: 'system',
-            content: `You are a master of writing deeply heartfelt, authentic love letters. Your letters should:
-            - Be warm, genuine, and emotionally resonant
-            - Use beautiful, poetic language without being overly flowery
-            - Include universal themes of love, appreciation, and human connection
-            - Be personal yet applicable to anyone
-            - Be around 200-300 words
-            - Feel like it's written by someone who truly cares
-            - Include encouraging and uplifting messages
-            - Use "you" to address the reader directly
-            - End with warmth and affection`
+            content: `You are a master of writing deeply romantic, passionate love letters between lovers. Your letters should:
+            - Be intensely romantic and passionate
+            - Express deep, intimate love between romantic partners
+            - Use beautiful, poetic language that stirs the heart
+            - Include themes of desire, devotion, and romantic connection
+            - Be personal and intimate, as if written by a devoted lover
+            - Be around 250-350 words
+            - Feel genuinely passionate and heartfelt
+            - Use "my love", "darling", "my heart" to address the reader
+            - Express longing, desire, and complete devotion
+            - End with romantic declarations of love`
           },
           {
             role: 'user',
-            content: 'Write a beautiful, heartfelt love letter that will make someone feel truly cherished and loved. Make it feel personal and authentic.'
+            content: 'Write a deeply romantic, passionate love letter that will make someone feel cherished by their lover. Make it intimate, heartfelt, and full of romantic devotion.'
           }
         ],
-        temperature: 0.8,
-        max_tokens: 500,
+        temperature: 0.9,
+        max_tokens: 600,
       }),
     });
 
@@ -60,21 +61,23 @@ const generateLoveLetter = async (): Promise<string> => {
     
     return data.choices[0].message.content;
   } catch (error) {
-    console.error("Error generating love letter:", error);
-    return `My Dearest Friend,
+    console.error("Error generating romantic love letter:", error);
+    return `My Darling Love,
 
-There are moments in life when words feel inadequate to express the depth of what lives in our hearts. Today, I want you to know that you are seen, you are valued, and you are deeply cherished.
+Every morning I wake with your name on my lips and your love filling my heart completely. You are the most beautiful thing that has ever happened to me, and I fall deeper in love with you with each passing day.
 
-Your presence in this world creates ripples of beauty that you may never fully realize. The way you care, the way you love, the unique light that you bring to every space you enter – it all matters more than you know.
+Your touch ignites a fire in my soul that burns only for you. When you look at me with those eyes, I see forever reflected back at me. You are my passion, my desire, my everything.
 
-In a world that can sometimes feel cold or distant, your warmth is a gift. Your kindness is a beacon. Your very existence makes this world a more beautiful place.
+I love the way you laugh, the way you make even ordinary moments feel magical. Your love transforms me, makes me want to be the best version of myself. In your arms, I have found my home, my peace, my greatest joy.
 
-I hope you take a moment today to feel proud of how far you've come, to acknowledge your strength, and to embrace the love that surrounds you – including the love you so generously give to others.
+Every kiss we share writes a new chapter in our love story. Every moment apart makes me ache for you more. You are not just my lover, you are my soulmate, my other half, the missing piece that makes me whole.
 
-You are worthy of all the good things life has to offer. You are enough, exactly as you are, in this very moment.
+I dream of growing old with you, of a thousand more mornings waking up beside you, of a lifetime of adventures with your hand in mine. You are my forever, my always, my one true love.
 
-With endless love and admiration,
-Someone who believes in you ✨`;
+Until I can hold you again, know that you carry my heart with you wherever you go.
+
+Forever and completely yours,
+Your devoted lover 💕`;
   }
 };
 
@@ -140,15 +143,15 @@ const handler = async (req: Request): Promise<Response> => {
           
           <p style="font-size: 16px; line-height: 1.5; color: #333;">
             Thank you for subscribing to Daily Love Letters. We're thrilled to have you join our community of people
-            who start each day with words of love and affirmation.
+            who start each day with words of love and romantic devotion.
           </p>
           
           <p style="font-size: 16px; line-height: 1.5; color: #333;">
-            Your first love letter is already on its way to your inbox! From now on, you'll receive a personalized love letter each morning to start your day with warmth and joy.
+            Your first romantic love letter is already on its way to your inbox! From now on, you'll receive a deeply passionate love letter each morning to fill your heart with romance and warmth.
           </p>
           
           <div style="text-align: center; margin: 30px 0;">
-            <p style="font-style: italic; color: #666;">"Love recognizes no barriers. It jumps hurdles, leaps fences, penetrates walls to arrive at its destination full of hope." - Maya Angelou</p>
+            <p style="font-style: italic; color: #666;">"Being deeply loved by someone gives you strength, while loving someone deeply gives you courage." - Lao Tzu</p>
           </div>
           
           <p style="font-size: 16px; line-height: 1.5; color: #333;">
@@ -156,7 +159,7 @@ const handler = async (req: Request): Promise<Response> => {
           </p>
           
           <p style="font-size: 16px; line-height: 1.5; color: #333;">
-            With warmth and gratitude,<br>
+            With warmth and romance,<br>
             The Daily Love Letters Team
           </p>
         </div>
@@ -166,9 +169,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Confirmation email sent successfully to:", email);
 
-    // Generate and send the first love letter
-    console.log("Generating love letter...");
-    const loveLetter = await generateLoveLetter();
+    // Generate and send the first romantic love letter
+    console.log("Generating romantic love letter...");
+    const loveLetter = await generateRomanticLoveLetter();
     
     const loveLetterResponse = await resend.emails.send({
       to: [email],
@@ -176,7 +179,7 @@ const handler = async (req: Request): Promise<Response> => {
       html: `
         <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 30px; background: linear-gradient(135deg, #fef7f0 0%, #fef2f2 100%);">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #be185d; font-size: 28px; margin: 0; font-weight: 300;">A Love Letter Just For You</h1>
+            <h1 style="color: #be185d; font-size: 28px; margin: 0; font-weight: 300;">Your First Love Letter</h1>
             <div style="width: 50px; height: 2px; background: #f472b6; margin: 15px auto;"></div>
           </div>
           
@@ -186,19 +189,19 @@ const handler = async (req: Request): Promise<Response> => {
           
           <div style="text-align: center; margin-top: 30px; color: #9ca3af; font-size: 14px;">
             <p>With love from Daily Love Letters 💌</p>
-            <p style="margin-top: 15px; font-style: italic;">"You are braver than you believe, stronger than you seem, and more loved than you know."</p>
+            <p style="margin-top: 15px; font-style: italic;">"Being deeply loved by someone gives you strength, while loving someone deeply gives you courage."</p>
           </div>
         </div>
       `,
-      subject: "Your First Love Letter 💕",
+      subject: "Your First Romantic Love Letter 💕",
     });
 
-    console.log("Love letter sent successfully to:", email);
+    console.log("Romantic love letter sent successfully to:", email);
     console.log("Generated love letter preview:", loveLetter.substring(0, 100) + "...");
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message: `Welcome emails sent to ${email}! Your first love letter is in your inbox.` 
+      message: `Welcome emails sent to ${email}! Your first romantic love letter is in your inbox.` 
     }), {
       status: 200,
       headers: {
