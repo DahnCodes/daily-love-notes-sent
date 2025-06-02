@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,21 +17,27 @@ const Index = () => {
     // Remove all non-numeric characters
     const cleaned = value.replace(/\D/g, '');
     
-    // If it doesn't start with a country code, assume it's a US number
-    if (cleaned.length <= 10) {
-      return `+1${cleaned}`;
-    } else if (!cleaned.startsWith('1') && cleaned.length === 11) {
-      return `+${cleaned}`;
-    } else if (cleaned.startsWith('1') && cleaned.length === 11) {
-      return `+${cleaned}`;
-    } else {
-      return `+${cleaned}`;
+    // If the number starts with 0 (Nigerian local format), replace with 234
+    if (cleaned.startsWith('0') && cleaned.length === 11) {
+      return `234${cleaned.substring(1)}`;
     }
+    
+    // If it already starts with 234, keep as is
+    if (cleaned.startsWith('234')) {
+      return cleaned;
+    }
+    
+    // If it's a 10-digit number, assume it's Nigerian without the leading 0
+    if (cleaned.length === 10) {
+      return `234${cleaned}`;
+    }
+    
+    // For other international numbers, return as is
+    return cleaned;
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Allow users to type without the + prefix
     setPhoneNumber(value);
   };
 
@@ -61,11 +66,12 @@ const Index = () => {
     let formattedPhone = "";
     if (phoneNumber) {
       formattedPhone = formatPhoneNumber(phoneNumber);
-      const phoneRegex = /^\+\d{10,15}$/;
-      if (!phoneRegex.test(formattedPhone)) {
+      
+      // Validate the formatted phone number
+      if (formattedPhone.length < 10 || formattedPhone.length > 15) {
         toast({
           title: "Invalid Phone Number",
-          description: "Please enter a valid phone number (10-15 digits).",
+          description: "Please enter a valid Nigerian phone number (e.g., 08123456789 or 2348123456789).",
           variant: "destructive",
         });
         return;
@@ -217,13 +223,13 @@ const Index = () => {
                   <div className="space-y-2">
                     <Input
                       type="tel"
-                      placeholder="1234567890"
+                      placeholder="08123456789 or 2348123456789"
                       value={phoneNumber}
                       onChange={handlePhoneChange}
                       className="h-12 text-center border-rose-200 focus:border-rose-400 focus:ring-rose-400"
                       disabled={isLoading}
                     />
-                    <p className="text-xs text-gray-500 text-center">Enter your phone number (country code will be added automatically)</p>
+                    <p className="text-xs text-gray-500 text-center">Enter your Nigerian phone number (country code will be added automatically)</p>
                   </div>
                 )}
                 

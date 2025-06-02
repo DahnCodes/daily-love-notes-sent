@@ -156,10 +156,24 @@ const handler = async (req: Request): Promise<Response> => {
     if (phone_number) {
       console.log("Preparing WhatsApp welcome message...");
       
-      // Clean phone number (remove + and any spaces/dashes)
-      const cleanPhoneNumber = phone_number.replace(/[\+\s\-\(\)]/g, '');
+      // Format phone number properly - ensure it starts with country code but no +
+      let cleanPhoneNumber = phone_number.toString();
+      
+      // Remove any + symbol
+      cleanPhoneNumber = cleanPhoneNumber.replace('+', '');
+      
+      // If it starts with 0, it's likely a Nigerian number without country code
+      if (cleanPhoneNumber.startsWith('0') && cleanPhoneNumber.length === 11) {
+        cleanPhoneNumber = '234' + cleanPhoneNumber.substring(1);
+      }
+      
+      // If it doesn't start with 234 and is 10 digits, add 234
+      if (!cleanPhoneNumber.startsWith('234') && cleanPhoneNumber.length === 10) {
+        cleanPhoneNumber = '234' + cleanPhoneNumber;
+      }
+      
       console.log("Original phone number:", phone_number);
-      console.log("Cleaned phone number:", cleanPhoneNumber);
+      console.log("Formatted phone number:", cleanPhoneNumber);
 
       const welcomeMessage = {
         messaging_product: "whatsapp",
