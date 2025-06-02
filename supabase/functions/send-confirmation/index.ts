@@ -48,24 +48,33 @@ const generateLoveLetter = async (): Promise<string> => {
       }),
     });
 
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
     const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response from OpenAI API');
+    }
+    
     return data.choices[0].message.content;
   } catch (error) {
     console.error("Error generating love letter:", error);
     return `My Dearest Friend,
 
-    There are moments in life when words feel inadequate to express the depth of what lives in our hearts. Today, I want you to know that you are seen, you are valued, and you are deeply cherished.
+There are moments in life when words feel inadequate to express the depth of what lives in our hearts. Today, I want you to know that you are seen, you are valued, and you are deeply cherished.
 
-    Your presence in this world creates ripples of beauty that you may never fully realize. The way you care, the way you love, the unique light that you bring to every space you enter – it all matters more than you know.
+Your presence in this world creates ripples of beauty that you may never fully realize. The way you care, the way you love, the unique light that you bring to every space you enter – it all matters more than you know.
 
-    In a world that can sometimes feel cold or distant, your warmth is a gift. Your kindness is a beacon. Your very existence makes this world a more beautiful place.
+In a world that can sometimes feel cold or distant, your warmth is a gift. Your kindness is a beacon. Your very existence makes this world a more beautiful place.
 
-    I hope you take a moment today to feel proud of how far you've come, to acknowledge your strength, and to embrace the love that surrounds you – including the love you so generously give to others.
+I hope you take a moment today to feel proud of how far you've come, to acknowledge your strength, and to embrace the love that surrounds you – including the love you so generously give to others.
 
-    You are worthy of all the good things life has to offer. You are enough, exactly as you are, in this very moment.
+You are worthy of all the good things life has to offer. You are enough, exactly as you are, in this very moment.
 
-    With endless love and admiration,
-    Someone who believes in you ✨`;
+With endless love and admiration,
+Someone who believes in you ✨`;
   }
 };
 
@@ -119,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Send the confirmation email
+    // Send the confirmation email with your verified domain
     const confirmationResponse = await resend.emails.send({
       to: [email],
       from: "Daily Love Letters <hello@dailylovenotes.name.ng>",
@@ -185,7 +194,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log("Love letter sent successfully to:", email);
-    console.log("Generated love letter:", loveLetter.substring(0, 100) + "...");
+    console.log("Generated love letter preview:", loveLetter.substring(0, 100) + "...");
 
     return new Response(JSON.stringify({ 
       success: true, 
