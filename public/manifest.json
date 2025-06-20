@@ -1,0 +1,41 @@
+
+{
+  "name": "Daily Love Letters",
+  "short_name": "Love Letters",
+  "description": "Receive personalized love letters daily",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdf2f8",
+  "theme_color": "#f43f5e",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/placeholder.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/placeholder.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "social"],
+  "shortcuts": [
+    {
+      "name": "Subscribe",
+      "short_name": "Subscribe",
+      "description": "Subscribe to daily love letters",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/placeholder.svg",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

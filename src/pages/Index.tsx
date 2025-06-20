@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Mail, Sparkles, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import PWAInstall from "@/components/PWAInstall";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -137,6 +138,11 @@ const Index = () => {
             Receive a personalized, authentic love letter in your inbox or WhatsApp every morning. 
             Start your day with words that warm your heart and remind you that you are cherished.
           </p>
+        </div>
+
+        {/* PWA Install Component */}
+        <div className="max-w-md mx-auto mb-8">
+          <PWAInstall />
         </div>
 
         {/* Main Sign-up Card */}
