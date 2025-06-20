@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -143,37 +142,34 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending welcome confirmation email...");
     const confirmationResponse = await resend.emails.send({
       to: [email],
-      from: "Daily Love Letters <hello@dailylovenotes.name.ng>",
+      from: "Your Love Note <hello@dailylovenotes.name.ng>",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #e11d48; text-align: center;">Welcome to Daily Love Letters! 💌</h1>
-          
-          <p style="font-size: 16px; line-height: 1.5; color: #333;">Dear subscriber,</p>
-          
-          <p style="font-size: 16px; line-height: 1.5; color: #333;">
-            Thank you for subscribing to Daily Love Letters. We're thrilled to have you join our community of people
-            who start each day with words of love and romantic devotion.
-          </p>
-          
-          <p style="font-size: 16px; line-height: 1.5; color: #333;">
-            Your first romantic love letter is already on its way to your inbox! From now on, you'll receive a deeply passionate love letter each morning to fill your heart with romance and warmth.
-          </p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <p style="font-style: italic; color: #666;">"Being deeply loved by someone gives you strength, while loving someone deeply gives you courage." - Lao Tzu</p>
+        <div style="font-family: Georgia, serif; max-width: 500px; margin: 0 auto; padding: 40px 20px; background-color: #fefefe; color: #333;">
+          <div style="text-align: center; margin-bottom: 40px;">
+            <h1 style="color: #8b4387; font-size: 24px; margin: 0; font-weight: normal; font-style: italic;">Welcome, beautiful soul</h1>
           </div>
           
-          <p style="font-size: 16px; line-height: 1.5; color: #333;">
-            If you have any questions or feedback, simply reply to this email. We'd love to hear from you.
-          </p>
-          
-          <p style="font-size: 16px; line-height: 1.5; color: #333;">
-            With warmth and romance,<br>
-            The Daily Love Letters Team
-          </p>
+          <div style="line-height: 1.7; font-size: 16px;">
+            <p>Dearest one,</p>
+            
+            <p>Your heart called out for love, and love has answered. From this moment forward, each morning will bring you words written just for you - tender, passionate, and true.</p>
+            
+            <p>I want you to know that you are worthy of the deepest love. You deserve to be cherished, adored, and reminded daily of your incredible worth. These letters are my gift to you, a daily embrace for your soul.</p>
+            
+            <p>Your first love letter is waiting for you right after this message. Open your heart, dear one, and let these words remind you of the love that surrounds you always.</p>
+            
+            <p style="margin-top: 30px; font-style: italic; text-align: center; color: #666;">
+              "You are loved more than you know, in ways you have yet to discover."
+            </p>
+            
+            <p style="margin-top: 30px;">
+              With all my love,<br>
+              <span style="font-style: italic;">Someone who believes in your beautiful heart</span>
+            </p>
+          </div>
         </div>
       `,
-      subject: "Welcome to Daily Love Letters! 💌",
+      subject: "Your heart has been heard 💕",
     });
 
     if (confirmationResponse.error) {
@@ -191,25 +187,19 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending first love letter...");
     const loveLetterResponse = await resend.emails.send({
       to: [email],
-      from: "Daily Love Letters <hello@dailylovenotes.name.ng>",
+      from: "Your Love Note <hello@dailylovenotes.name.ng>",
       html: `
-        <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 30px; background: linear-gradient(135deg, #fef7f0 0%, #fef2f2 100%);">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #be185d; font-size: 28px; margin: 0; font-weight: 300;">Your First Love Letter</h1>
-            <div style="width: 50px; height: 2px; background: #f472b6; margin: 15px auto;"></div>
+        <div style="font-family: Georgia, serif; max-width: 500px; margin: 0 auto; padding: 40px 20px; background: linear-gradient(135deg, #fef7f0 0%, #fef2f2 100%);">
+          <div style="background: white; padding: 35px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <div style="font-size: 17px; line-height: 1.8; color: #444; white-space: pre-line;">${loveLetter}</div>
           </div>
           
-          <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(190, 24, 93, 0.1); border-left: 4px solid #f472b6;">
-            <div style="font-size: 18px; line-height: 1.8; color: #4a4a4a; white-space: pre-line;">${loveLetter}</div>
-          </div>
-          
-          <div style="text-align: center; margin-top: 30px; color: #9ca3af; font-size: 14px;">
-            <p>With love from Daily Love Letters 💌</p>
-            <p style="margin-top: 15px; font-style: italic;">"Being deeply loved by someone gives you strength, while loving someone deeply gives you courage."</p>
+          <div style="text-align: center; margin-top: 25px; color: #999; font-size: 13px;">
+            <p style="font-style: italic;">Sent with love, just for you</p>
           </div>
         </div>
       `,
-      subject: "Your First Romantic Love Letter 💕",
+      subject: "A letter written just for you",
     });
 
     if (loveLetterResponse.error) {
@@ -222,7 +212,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message: `Welcome! Check your inbox for your welcome email and your first romantic love letter.`,
+      message: `Welcome! Check your inbox for your personal message.`,
       details: {
         confirmationSent: !confirmationResponse.error,
         loveLetterSent: !loveLetterResponse.error

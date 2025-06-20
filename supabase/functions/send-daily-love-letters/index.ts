@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -128,25 +127,19 @@ const handler = async (req: Request): Promise<Response> => {
         try {
           await resend.emails.send({
             to: [subscriber.email],
-            from: "Daily Love Letters <hello@dailylovenotes.name.ng>",
+            from: "Your Love Note <hello@dailylovenotes.name.ng>",
             html: `
-              <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 30px; background: linear-gradient(135deg, #fef7f0 0%, #fef2f2 100%);">
-                <div style="text-align: center; margin-bottom: 30px;">
-                  <h1 style="color: #be185d; font-size: 28px; margin: 0; font-weight: 300;">A Love Letter For You</h1>
-                  <div style="width: 50px; height: 2px; background: #f472b6; margin: 15px auto;"></div>
+              <div style="font-family: Georgia, serif; max-width: 500px; margin: 0 auto; padding: 40px 20px; background: linear-gradient(135deg, #fef7f0 0%, #fef2f2 100%);">
+                <div style="background: white; padding: 35px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                  <div style="font-size: 17px; line-height: 1.8; color: #444; white-space: pre-line;">${loveLetter}</div>
                 </div>
                 
-                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(190, 24, 93, 0.1); border-left: 4px solid #f472b6;">
-                  <div style="font-size: 18px; line-height: 1.8; color: #4a4a4a; white-space: pre-line;">${loveLetter}</div>
-                </div>
-                
-                <div style="text-align: center; margin-top: 30px; color: #9ca3af; font-size: 14px;">
-                  <p>With love from Daily Love Letters 💌</p>
-                  <p style="margin-top: 15px; font-style: italic;">"Being deeply loved by someone gives you strength, while loving someone deeply gives you courage."</p>
+                <div style="text-align: center; margin-top: 25px; color: #999; font-size: 13px;">
+                  <p style="font-style: italic;">Sent with love, just for you</p>
                 </div>
               </div>
             `,
-            subject: "Your Daily Love Letter 💕",
+            subject: "A letter written just for you",
           });
 
           successCount++;
