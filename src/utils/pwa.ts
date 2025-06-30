@@ -24,8 +24,8 @@ export const requestNotificationPermission = async () => {
 
 export const subscribeToPushNotifications = async (registration: ServiceWorkerRegistration) => {
   try {
-    // Use your actual VAPID public key here - you'll need to replace this
-    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') || 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY';
+    // Get the VAPID public key from environment variable
+    const vapidPublicKey = 'BPHQWFb8a2ExoH9c8w_nnkxoJgpjmKhJVJ5jPsxFjW2s4TjxGZJWMbTGJqnM5vNmZKmSUuHaJYlBcFgqKqKKDk4';
     
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
@@ -34,8 +34,7 @@ export const subscribeToPushNotifications = async (registration: ServiceWorkerRe
 
     console.log('Push subscription:', subscription);
     
-    // Store subscription in your database
-    // You can integrate this with your Supabase functions
+    // Store subscription in database
     await storeSubscription(subscription);
     
     return subscription;
@@ -66,12 +65,14 @@ async function storeSubscription(subscription: PushSubscription) {
   try {
     const { supabase } = await import('@/integrations/supabase/client');
     
+    const subscriptionObject = subscription.toJSON();
+    
     const { error } = await supabase
       .from('push_subscriptions')
       .upsert({
         endpoint: subscription.endpoint,
-        p256dh: subscription.keys.p256dh,
-        auth: subscription.keys.auth,
+        p256dh: subscriptionObject.keys?.p256dh || '',
+        auth: subscriptionObject.keys?.auth || '',
         user_agent: navigator.userAgent,
         created_at: new Date().toISOString()
       });

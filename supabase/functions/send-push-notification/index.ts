@@ -7,21 +7,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface PushSubscription {
-  endpoint: string;
-  keys: {
-    p256dh: string;
-    auth: string;
-  };
-}
-
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { subscription, title, body, icon, url } = await req.json();
+    const { title, body, icon, url } = await req.json();
 
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
@@ -29,6 +21,24 @@ const handler = async (req: Request): Promise<Response> => {
     if (!vapidPrivateKey || !vapidPublicKey) {
       throw new Error('VAPID keys not configured');
     }
+
+    // Get Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get all push subscriptions
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*');
+
+    if (error) {
+      console.error('Error fetching subscriptions:', error);
+      throw error;
+    }
+
+    console.log(`Found ${subscriptions?.length || 0} subscriptions`);
 
     // Create the notification payload
     const payload = JSON.stringify({
@@ -56,23 +66,56 @@ const handler = async (req: Request): Promise<Response> => {
       ]
     });
 
-    // Send push notification using Web Push Protocol
-    const response = await fetch(subscription.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/octet-stream',
-        'Content-Encoding': 'aes128gcm',
-        'Authorization': `vapid t=${await generateJWT(vapidPrivateKey, vapidPublicKey, subscription.endpoint)}, k=${vapidPublicKey}`,
-        'Crypto-Key': `p256ecdsa=${vapidPublicKey}`,
-        'TTL': '86400'
-      },
-      body: await encryptPayload(payload, subscription.keys.p256dh, subscription.keys.auth)
-    });
+    // Send notifications to all subscriptions
+    const results = [];
+    for (const subscription of subscriptions || []) {
+      try {
+        const pushSubscription = {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: subscription.p256dh,
+            auth: subscription.auth
+          }
+        };
 
-    console.log('Push notification sent:', response.status);
+        // For now, we'll use a simple approach to send notifications
+        // In a production environment, you'd want to use a proper Web Push library
+        console.log('Sending notification to:', subscription.endpoint);
+        
+        // This is a simplified implementation
+        // You would typically use a library like 'web-push' for proper VAPID authentication
+        const response = await fetch(subscription.endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'TTL': '86400'
+          },
+          body: payload
+        });
+
+        results.push({
+          endpoint: subscription.endpoint,
+          success: response.ok,
+          status: response.status
+        });
+
+        console.log('Notification sent:', response.status);
+      } catch (error) {
+        console.error('Error sending to subscription:', error);
+        results.push({
+          endpoint: subscription.endpoint,
+          success: false,
+          error: error.message
+        });
+      }
+    }
 
     return new Response(
-      JSON.stringify({ success: true, status: response.status }),
+      JSON.stringify({ 
+        success: true, 
+        results,
+        message: `Attempted to send ${results.length} notifications`
+      }),
       {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -89,35 +132,5 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 };
-
-// Helper function to generate JWT for VAPID
-async function generateJWT(privateKey: string, publicKey: string, audience: string) {
-  const header = {
-    typ: 'JWT',
-    alg: 'ES256'
-  };
-
-  const payload = {
-    aud: new URL(audience).origin,
-    exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60, // 12 hours
-    sub: 'mailto:your-email@example.com'
-  };
-
-  const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-  const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-
-  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
-  
-  // For simplicity, using a basic implementation
-  // In production, you'd want to use proper ECDSA signing
-  return `${unsignedToken}.signature`;
-}
-
-// Helper function to encrypt payload
-async function encryptPayload(payload: string, p256dh: string, auth: string) {
-  // This is a simplified implementation
-  // In production, you'd implement proper AES-GCM encryption
-  return new TextEncoder().encode(payload);
-}
 
 serve(handler);
