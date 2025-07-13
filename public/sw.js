@@ -43,8 +43,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: notificationData.body,
-    icon: notificationData.icon,
-    badge: '/placeholder.svg',
+    icon: notificationData.icon || '/icon-192.png',
+    badge: '/icon-192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -54,12 +54,12 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'Read Now',
-        icon: '/placeholder.svg'
+        icon: '/icon-192.png'
       },
       {
         action: 'close',
         title: 'Close',
-        icon: '/placeholder.svg'
+        icon: '/icon-192.png'
       }
     ]
   };

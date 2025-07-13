@@ -106,7 +106,7 @@ export const sendTestNotification = async () => {
       body: {
         title: 'Test Notification',
         body: 'Your push notifications are working! 💕',
-        icon: '/placeholder.svg',
+        icon: '/icon-192.png',
         url: '/'
       }
     });

@@ -9,3 +9,9 @@ verify_jwt = false
 
 [functions.send-push-notification]
 verify_jwt = false
+
+[functions.generate-daily-love-letter]
+verify_jwt = false
+
+[functions.send-daily-love-letters]
+verify_jwt = false

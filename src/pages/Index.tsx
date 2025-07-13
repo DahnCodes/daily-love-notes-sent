@@ -6,6 +6,7 @@ import { Heart, Mail, Sparkles, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import PWAInstall from "@/components/PWAInstall";
+import DailyLoveLetter from "@/components/DailyLoveLetter";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -143,6 +144,11 @@ const Index = () => {
         {/* PWA Install Component */}
         <div className="max-w-md mx-auto mb-8">
           <PWAInstall />
+        </div>
+
+        {/* Daily Love Letter Component */}
+        <div className="max-w-md mx-auto mb-8">
+          <DailyLoveLetter />
         </div>
 
         {/* Main Sign-up Card */}
