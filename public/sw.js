@@ -2,8 +2,6 @@
 const CACHE_NAME = 'daily-love-letters-v1';
 const urlsToCache = [
   '/',
-  '/src/main.tsx',
-  '/src/index.css',
   '/manifest.json'
 ];
 
@@ -28,14 +26,29 @@ self.addEventListener('fetch', (event) => {
 
 // Push event - handle push notifications
 self.addEventListener('push', (event) => {
-  const options = {
-    body: event.data ? event.data.text() : 'You have a new love letter waiting! 💕',
+  let notificationData = {
+    title: 'Daily Love Letters',
+    body: 'You have a new love letter waiting! 💕',
     icon: '/placeholder.svg',
+    url: '/'
+  };
+
+  if (event.data) {
+    try {
+      notificationData = { ...notificationData, ...event.data.json() };
+    } catch (e) {
+      notificationData.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: notificationData.body,
+    icon: notificationData.icon,
     badge: '/placeholder.svg',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
-      primaryKey: 1
+      url: notificationData.url
     },
     actions: [
       {
@@ -52,7 +65,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification('Daily Love Letters', options)
+    self.registration.showNotification(notificationData.title, options)
   );
 });
 
@@ -60,9 +73,10 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  if (event.action === 'explore') {
+  if (event.action === 'explore' || !event.action) {
+    const url = event.notification.data?.url || '/';
     event.waitUntil(
-      clients.openWindow('/')
+      clients.openWindow(url)
     );
   }
 });

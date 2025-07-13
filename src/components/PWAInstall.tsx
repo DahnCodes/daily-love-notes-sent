@@ -28,10 +28,25 @@ const PWAInstall = () => {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Check notification permission
-    if ('Notification' in window) {
-      setNotificationsEnabled(Notification.permission === 'granted');
-    }
+    // Check notification permission and subscription status
+    const checkNotificationStatus = async () => {
+      if ('Notification' in window) {
+        const hasPermission = Notification.permission === 'granted';
+        setNotificationsEnabled(hasPermission);
+        
+        if (hasPermission && 'serviceWorker' in navigator) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            setPushSubscribed(!!subscription);
+          } catch (error) {
+            console.error('Error checking push subscription:', error);
+          }
+        }
+      }
+    };
+
+    checkNotificationStatus();
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
